@@ -1,0 +1,40 @@
+version: '3'
+services:
+  db:
+    image: postgres:11
+    restart: always
+    volumes:
+      - ./data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: yanspect
+    networks:
+     - yanspect
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      DATABASE_URL: postgresql://root:root@db:5432/yanspect
+    volumes:
+      - ./app:/app
+    depends_on:
+      - db
+    networks:
+      - yanspect
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    restart: always
+    depends_on:
+      - server
+    ports:
+      - 80:80
+    networks:
+      - yanspect
+networks:
+  yanspect:
+    external: true
