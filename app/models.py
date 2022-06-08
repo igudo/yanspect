@@ -4,11 +4,13 @@ from enum import Enum
 
 
 class ShopUnitType(str, Enum):
+    """Тип элемента - категория или товар"""
     CATEGORY = "CATEGORY"
     OFFER = "OFFER"
 
 
 class ShopUnitImport(BaseModel):
+    """Модель товара/категории при запросе /import"""
     id: str
     name: str
     parentId: str = None
@@ -16,9 +18,16 @@ class ShopUnitImport(BaseModel):
     price: int = None
 
     class Config:
-        use_enum_values = True
+        use_enum_values = True  # нужно для поддержки ShopUnitType, который Enum
 
 
 class ImportsRequest(BaseModel):
+    """Модель запроса /import"""
     items: List[ShopUnitImport]
     updateDate: str
+
+
+class Error(BaseModel):
+    """Формат возвращаемых ошибок"""
+    code: int
+    message: str
