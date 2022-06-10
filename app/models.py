@@ -9,6 +9,12 @@ class ShopUnitType(str, Enum):
     OFFER = "OFFER"
 
 
+class StatusCode(int, Enum):
+    """Возвращаемые коды"""
+    OK_200 = 200
+    BAD_REQUEST_400 = 400
+
+
 class ShopUnitImport(BaseModel):
     """Модель товара/категории при запросе /import"""
     id: str
