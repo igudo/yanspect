@@ -1,4 +1,4 @@
-from abc import ABC, ABCMeta
+from abc import ABC, ABCMeta, abstractmethod
 from typing import Union, Type, TypeVar
 from pydantic import BaseModel
 from models import StatusCode
@@ -60,5 +60,9 @@ class AbstractDBClient(AbstractClient, metaclass=ABCMeta):
     """Описывает метод инициализации для всех DataBase Client"""
     connect: callable
 
-    def __init__(self, host: str, database_name: str, user: str, password: str):
-        self.connect(host, database_name, user, password)
+    def __init__(self, host: str, database_name: str, user: str, password: str, port: str = "5432"):
+        self.connect(host, database_name, user, password, port)
+
+    @abstractmethod
+    def create_table_if_not_exists(self, table_name, schema) -> None:
+        pass

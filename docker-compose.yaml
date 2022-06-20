@@ -17,7 +17,13 @@ services:
       dockerfile: Dockerfile
     restart: always
     environment:
-      DATABASE_URL: postgresql://root:root@db:5432/yanspect
+      DATABASE_HOST: db
+      DATABASE_PORT: 5432
+      DATABASE_NAME: yanspect
+      DATABASE_USER: root
+      DATABASE_PASSWORD: root
+      DB_OFFERS_TABLE_NAME: offers
+      DB_CATEGORIES_TABLE_NAME: categories
     volumes:
       - ./app:/app
     depends_on:

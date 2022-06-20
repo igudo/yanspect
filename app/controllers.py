@@ -11,8 +11,8 @@ class ImportsController(AbstractController):
     factory = ImportsDtoFactory
     presenter = ImportsPresenter
 
-    def __init__(self, db_host, db_name, db_user, db_password):
-        service = self.service(repository=DBRepository(db_host, db_name, db_user, db_password))
+    def __init__(self, db: DBRepository):
+        service = self.service(repository=db)
         super().__init__(service=service)
 
     def import_items(self, model: ImportsRequest) -> str:
