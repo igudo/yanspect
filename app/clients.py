@@ -1,9 +1,7 @@
 from typing import Any
 from abstract import AbstractDBClient
 import psycopg2
-import logging
-
-logger = logging.getLogger(__name__)
+from datetime import datetime
 
 
 class PostgresClient(AbstractDBClient):
@@ -14,6 +12,7 @@ class PostgresClient(AbstractDBClient):
 
     def _execute(self, cmd) -> list:
         cursor = self.db.cursor()
+        print(cmd)
         cursor.execute(cmd)
         try:
             d = cursor.fetchall()
@@ -22,11 +21,36 @@ class PostgresClient(AbstractDBClient):
         cursor.close()
         return d
 
+    def select(self, table_name, **kwargs) -> list:
+        q = "1=1"
+        for k,v in kwargs.items():
+            q+=f" AND {k}={self.e(v)}"
+        return self._execute(f"SELECT * FROM {table_name} WHERE {q};")
+
+    def insert(self, table_name, *args) -> list:
+        return self._execute(f"INSERT INTO {table_name} VALUES ({','.join([str(self.e(arg)) for arg in args])});")
+
+    def update(self, table_name, id, **kwargs) -> list:
+        q = ",".join([f"{k}={self.e(v)}" for k,v in kwargs.items()])
+        return self._execute(f"UPDATE {table_name} SET {q} WHERE id={id}")
+
     def create_table_if_not_exists(self, table_name, schema):
         self._execute(f"""
         CREATE TABLE IF NOT EXISTS {table_name} (
           {schema}
         );
         """)
+
+    def e(self, s):
+        if type(s) == str:
+            return "\'" + s + "\'"
+        elif type(s) == int:
+            return s
+        elif type(s) == float:
+            return int(s)
+        elif type(s) == datetime:
+            return f"TO_TIMESTAMP('{s.strftime('%Y-%m-%d %H:%M:%S.%f')}', 'YYYY-MM-DD HH24:MI:SS.FF')"
+        else:
+            return "null"
 
 

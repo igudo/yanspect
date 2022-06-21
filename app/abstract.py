@@ -66,3 +66,7 @@ class AbstractDBClient(AbstractClient, metaclass=ABCMeta):
     @abstractmethod
     def create_table_if_not_exists(self, table_name, schema) -> None:
         pass
+
+    @abstractmethod
+    def _execute(self, cmd: str) -> list:
+        pass

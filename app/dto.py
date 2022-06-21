@@ -1,6 +1,7 @@
 from abc import ABC
 from dataclasses import dataclass
-from typing import Optional
+from datetime import datetime
+from models import ShopUnitType
 
 
 class Dto(ABC):
@@ -10,4 +11,12 @@ class Dto(ABC):
 
 @dataclass(frozen=True)
 class ImportsDto(Dto):
-    pass
+    """Объект """
+    id: str
+    name: str
+    type: ShopUnitType
+    update_date: datetime
+    price: int = None
+    parentId: str = None
+
+

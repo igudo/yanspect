@@ -1,9 +1,14 @@
+import fastapi
 from fastapi import FastAPI, Body
 from fastapi.responses import JSONResponse
 from fastapi.exception_handlers import RequestValidationError
 from models import ImportsRequest, Error, StatusCode
 from controllers import ImportsController
 from repositories import DBRepository
+import logging
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.ERROR)
 
 app = FastAPI()
 db = None
@@ -28,9 +33,10 @@ async def startup():
 
 
 @app.exception_handler(RequestValidationError)
-def handle_validation_error(request, exc) -> JSONResponse:
+async def handle_validation_error(request: fastapi.Request, exc: RequestValidationError) -> JSONResponse:
     """Переопределяет Validation Error в соответсвии с openapi.yaml;
     код по умолчанию 422 в fastapi"""
+    logger.error(f"RequestValidationError {request.url}: {exc.raw_errors}")
     return JSONResponse(
         status_code=400,
         content=Error(code=StatusCode.BAD_REQUEST_400, message="Validation Failed").dict()

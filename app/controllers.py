@@ -4,6 +4,7 @@ from models import ImportsRequest
 from repositories import DBRepository
 from factories import ImportsDtoFactory
 from presenters import ImportsPresenter
+from fastapi.exceptions import RequestValidationError, ValidationError
 
 
 class ImportsController(AbstractController):
@@ -16,6 +17,10 @@ class ImportsController(AbstractController):
         super().__init__(service=service)
 
     def import_items(self, model: ImportsRequest) -> str:
-        dto = self.factory.model_to_dto(model)
+        try:
+            dto = self.factory.model_to_dto(model)
+        except ValueError as e:
+            raise RequestValidationError(e)
+
         is_imported = self.service.imports(dto)
         return self.presenter.bool_to_response(is_imported)
