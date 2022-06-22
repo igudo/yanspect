@@ -19,15 +19,17 @@ class DBRepository(AbstractRepository, PostgresClient):
 
     def add_or_update(self, dto: ImportsDto) -> bool:
         tn = self.categories_table_name if dto.type == ShopUnitType.CATEGORY else self.offers_table_name
-        if self.select(tn, id=dto.id):
-            self.update(
-                tn,
-                dto.id,
-                name=dto.name,
-                parentId=dto.parentId,
-                date=dto.update_date,
-                price=dto.price
-            )
+        item = self.select(tn, id=dto.id)
+        if item:
+            if self.tuple_to_dict(item)["update_date"] < dto.update_date:
+                self.update(
+                    tn,
+                    dto.id,
+                    name=dto.name,
+                    parentId=dto.parentId,
+                    date=dto.update_date,
+                    price=dto.price
+                )
         else:
             self.insert(
                 tn,
