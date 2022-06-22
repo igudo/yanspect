@@ -37,11 +37,51 @@ class DBRepository(AbstractRepository, PostgresClient):
                 dto.update_date,
                 dto.price
             )
-        print(self.select(self.categories_table_name))
-        print(self.select(self.offers_table_name))
         return True
+
+    def get_item(self, id: str) -> dict:
+        for tn in (self.offers_table_name, self.categories_table_name):
+            el = self.select(tn, id=id)
+            if el:
+                ell = self.tuple_to_dict(el[0])
+                if tn == self.categories_table_name:
+                    ell["type"] = ShopUnitType.CATEGORY
+                else:
+                    ell["type"] = ShopUnitType.OFFER
+                return ell
+
+    def select_items(self, **kwargs) -> List[dict]:
+        l = []
+        for tn in (self.offers_table_name, self.categories_table_name):
+            els = self.select(tn, **kwargs)
+            for el in els:
+                ell = self.tuple_to_dict(el)
+                if tn == self.categories_table_name:
+                    ell["type"] = ShopUnitType.CATEGORY
+                else:
+                    ell["type"] = ShopUnitType.OFFER
+                l.append(ell)
+        return l
+
+    def delete_category(self, id: str):
+        return self.delete(self.categories_table_name, id)
+
+    def delete_item(self, id: str):
+        return self.delete(self.offers_table_name, id)
 
     def create_tables(self):
         self.create_table_if_not_exists(self.offers_table_name, self.schema)
         self.create_table_if_not_exists(self.categories_table_name, self.schema)
+
+    def tuple_to_dict(self, t):
+        return {
+            "id": t[0],
+            "parentId": t[1],
+            "name": t[2],
+            "update_date": t[3],
+            "price": t[4]
+        }
+
+    def close(self):
+        self.db.close()
 

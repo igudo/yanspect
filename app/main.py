@@ -3,7 +3,7 @@ from fastapi import FastAPI, Body
 from fastapi.responses import JSONResponse
 from fastapi.exception_handlers import RequestValidationError
 from models import ImportsRequest, Error, StatusCode
-from controllers import ImportsController
+from controllers import ImportsController, DeleteControlled
 from repositories import DBRepository
 import logging
 
@@ -30,6 +30,14 @@ async def startup():
     db.categories_table_name = db_categories_table_name
     db.offers_table_name = db_offers_table_name
     db.create_tables()
+    print(db.select(db.offers_table_name))
+    print(db.select(db.categories_table_name))
+
+
+@app.on_event("shutdown")
+def shutdown_event():
+    db.close()
+
 
 
 @app.exception_handler(RequestValidationError)
@@ -49,6 +57,13 @@ async def imports(request: ImportsRequest = Body(...)):
     Изменение типа элемента с товара на категорию или с категории на товар не допускается. Порядок элементов в
     запросе является произвольным. """
     return ImportsController(db).import_items(request)
+
+
+@app.delete("/delete/{id}")
+async def imports(id: str):
+    """Удалить элемент по идентификатору. При удалении категории удаляются все дочерние элементы. Доступ к статистике
+    (истории обновлений) удаленного элемента невозможен. """
+    return DeleteControlled(db).delete(id)
 
 
 @app.get("/sales")

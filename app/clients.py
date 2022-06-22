@@ -9,10 +9,10 @@ class PostgresClient(AbstractDBClient):
 
     def connect(self, host, database_name, user, password, port):
         self.db = psycopg2.connect(dbname=database_name, user=user, password=password, host=host, port=port)
+        self.db.autocommit = True
 
     def _execute(self, cmd) -> list:
         cursor = self.db.cursor()
-        print(cmd)
         cursor.execute(cmd)
         try:
             d = cursor.fetchall()
@@ -32,7 +32,10 @@ class PostgresClient(AbstractDBClient):
 
     def update(self, table_name, id, **kwargs) -> list:
         q = ",".join([f"{k}={self.e(v)}" for k,v in kwargs.items()])
-        return self._execute(f"UPDATE {table_name} SET {q} WHERE id={id}")
+        return self._execute(f"UPDATE {table_name} SET {q} WHERE id={self.e(id)};")
+
+    def delete(self, table_name: str, id: str):
+        return self._execute(f"DELETE FROM {table_name} WHERE id={self.e(id)};")
 
     def create_table_if_not_exists(self, table_name, schema):
         self._execute(f"""
