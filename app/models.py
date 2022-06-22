@@ -13,6 +13,7 @@ class StatusCode(int, Enum):
     """Возвращаемые коды"""
     OK_200 = 200
     BAD_REQUEST_400 = 400
+    NOT_FOUND_404 = 404
 
 
 class ShopUnitImport(BaseModel):

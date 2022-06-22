@@ -1,6 +1,7 @@
 from abstract import AbstractRepository
 from clients import PostgresClient
 from dto import ImportsDto
+from factories import ImportsDtoFactory
 from models import ShopUnitType
 from typing import List
 
@@ -17,11 +18,17 @@ class DBRepository(AbstractRepository, PostgresClient):
         PRIMARY KEY (id)
     """
 
+    def update_category_date(self, dto: ImportsDto):
+        if dto.parentId:
+            self.update(self.categories_table_name, dto.parentId, date=dto.update_date)
+            self.update_category_date(ImportsDtoFactory.dict_to_dto(self.get_item(dto.parentId)))
+
+
     def add_or_update(self, dto: ImportsDto) -> bool:
         tn = self.categories_table_name if dto.type == ShopUnitType.CATEGORY else self.offers_table_name
         item = self.select(tn, id=dto.id)
         if item:
-            if self.tuple_to_dict(item)["update_date"] < dto.update_date:
+            if self.tuple_to_dict(item[0], tn)["update_date"] < dto.update_date:
                 self.update(
                     tn,
                     dto.id,
@@ -39,17 +46,14 @@ class DBRepository(AbstractRepository, PostgresClient):
                 dto.update_date,
                 dto.price
             )
+        self.update_category_date(dto)
         return True
 
     def get_item(self, id: str) -> dict:
         for tn in (self.offers_table_name, self.categories_table_name):
             el = self.select(tn, id=id)
             if el:
-                ell = self.tuple_to_dict(el[0])
-                if tn == self.categories_table_name:
-                    ell["type"] = ShopUnitType.CATEGORY
-                else:
-                    ell["type"] = ShopUnitType.OFFER
+                ell = self.tuple_to_dict(el[0], tn)
                 return ell
 
     def select_items(self, **kwargs) -> List[dict]:
@@ -57,11 +61,7 @@ class DBRepository(AbstractRepository, PostgresClient):
         for tn in (self.offers_table_name, self.categories_table_name):
             els = self.select(tn, **kwargs)
             for el in els:
-                ell = self.tuple_to_dict(el)
-                if tn == self.categories_table_name:
-                    ell["type"] = ShopUnitType.CATEGORY
-                else:
-                    ell["type"] = ShopUnitType.OFFER
+                ell = self.tuple_to_dict(el, tn)
                 l.append(ell)
         return l
 
@@ -75,13 +75,14 @@ class DBRepository(AbstractRepository, PostgresClient):
         self.create_table_if_not_exists(self.offers_table_name, self.schema)
         self.create_table_if_not_exists(self.categories_table_name, self.schema)
 
-    def tuple_to_dict(self, t):
+    def tuple_to_dict(self, t: tuple, tname: str) -> dict:
         return {
             "id": t[0],
             "parentId": t[1],
             "name": t[2],
             "update_date": t[3],
-            "price": t[4]
+            "price": t[4],
+            "type": ShopUnitType.CATEGORY if tname==self.categories_table_name else ShopUnitType.OFFER
         }
 
     def close(self):

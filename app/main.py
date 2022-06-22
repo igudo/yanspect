@@ -3,7 +3,8 @@ from fastapi import FastAPI, Body
 from fastapi.responses import JSONResponse
 from fastapi.exception_handlers import RequestValidationError
 from models import ImportsRequest, Error, StatusCode
-from controllers import ImportsController, DeleteControlled
+from exceptions import NotFoundException
+from controllers import ImportsController, DeleteControlled, NodesControlled
 from repositories import DBRepository
 import logging
 
@@ -39,15 +40,25 @@ def shutdown_event():
     db.close()
 
 
-
 @app.exception_handler(RequestValidationError)
 async def handle_validation_error(request: fastapi.Request, exc: RequestValidationError) -> JSONResponse:
     """Переопределяет Validation Error в соответсвии с openapi.yaml;
     код по умолчанию 422 в fastapi"""
     logger.error(f"RequestValidationError {request.url}: {exc.raw_errors}")
     return JSONResponse(
-        status_code=400,
+        status_code=StatusCode.BAD_REQUEST_400,
         content=Error(code=StatusCode.BAD_REQUEST_400, message="Validation Failed").dict()
+    )
+
+
+@app.exception_handler(NotFoundException)
+async def handle_validation_error(request: fastapi.Request, exc: NotFoundException) -> JSONResponse:
+    """Переопределяет Validation Error в соответсвии с openapi.yaml;
+    код по умолчанию 422 в fastapi"""
+    logger.error(f"NotFoundException {request.url}: {exc.detail}")
+    return JSONResponse(
+        status_code=StatusCode.NOT_FOUND_404,
+        content=Error(code=StatusCode.NOT_FOUND_404, message="Item not found").dict()
     )
 
 
@@ -60,17 +71,27 @@ async def imports(request: ImportsRequest = Body(...)):
 
 
 @app.delete("/delete/{id}")
-async def imports(id: str):
+async def delete(id: str):
     """Удалить элемент по идентификатору. При удалении категории удаляются все дочерние элементы. Доступ к статистике
     (истории обновлений) удаленного элемента невозможен. """
     return DeleteControlled(db).delete(id)
 
 
-@app.get("/sales")
-async def sales(date: str):
-    """Получение списка **товаров**, цена которых была обновлена за последние 24 часа от времени переданном в
-    запросе. Обновление цены не означает её изменение. Обновления цен удаленных товаров недоступны. При обновлении
-    цены товара, средняя цена категории, которая содержит этот товар, тоже обновляется. """
-    print(date)
-    return 200
+@app.get("/nodes/{id}")
+async def nodes(id: str):
+    """Удалить элемент по идентификатору. При удалении категории удаляются все дочерние элементы. Доступ к статистике
+    (истории обновлений) удаленного элемента невозможен. """
+    return JSONResponse(
+        status_code=200,
+        content=NodesControlled(db).nodes(id)
+    )
+
+
+# @app.get("/sales")
+# async def sales(date: str):
+#     """Получение списка **товаров**, цена которых была обновлена за последние 24 часа от времени переданном в
+#     запросе. Обновление цены не означает её изменение. Обновления цен удаленных товаров недоступны. При обновлении
+#     цены товара, средняя цена категории, которая содержит этот товар, тоже обновляется. """
+#     print(date)
+#     return 200
 
