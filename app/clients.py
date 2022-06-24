@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, List
 from abstract import AbstractDBClient
 import psycopg2
 from datetime import datetime
@@ -8,10 +8,13 @@ class PostgresClient(AbstractDBClient):
     db: psycopg2._psycopg.connection
 
     def connect(self, host, database_name, user, password, port):
+        """setup connection"""
         self.db = psycopg2.connect(dbname=database_name, user=user, password=password, host=host, port=port)
         self.db.autocommit = True
 
     def _execute(self, cmd) -> list:
+        """execute a sql command
+        returns list of response items"""
         cursor = self.db.cursor()
         cursor.execute(cmd)
         try:
@@ -45,6 +48,7 @@ class PostgresClient(AbstractDBClient):
         """)
 
     def e(self, s):
+        """escape string (экранировать строку)"""
         if type(s) == str:
             return "\'" + s + "\'"
         elif type(s) == int:

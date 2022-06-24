@@ -19,20 +19,3 @@ class NodesPresenter(AbstractPresenter):
         del d["update_date"]
         return d
 
-    @classmethod
-    def make_category_price(cls, d: dict) -> tuple:
-        p = 0
-        i = 0
-        for ch in d["children"]:
-            if ch["type"] == ShopUnitType.CATEGORY:
-                p1,i1 = cls.make_category_price(ch)
-                p+=p1
-                i+=i1
-            else:
-                i+=1
-                p+=ch["price"]
-        if i==0:
-            d["price"] = None
-        else:
-            d["price"] = int(p/i)
-        return p,i

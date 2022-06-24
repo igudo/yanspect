@@ -20,25 +20,13 @@ class ImportsService(AbstractService):
 
 class DeleteService(AbstractService):
     repository: DBRepository
-    factory: ImportsDtoFactory
-
-    def __init__(self, factory, repository = None, client = None):
-        self.factory = factory
-        super().__init__(repository=repository, client=client)
-
     @bool_on_error
-    def delete_category(self, item: ImportsDto) -> bool:
-        for child_item in self.repository.select_items(parentId=item.id):
-            child_item = self.factory.dict_to_dto(child_item)
-            if child_item.type == ShopUnitType.CATEGORY:
-                self.delete_category(child_item)
-            else:
-                self.delete_item(child_item)
-        return self.repository.delete_category(item.id) == []
-
-    @bool_on_error
-    def delete_item(self, item: ImportsDto) -> bool:
-        return self.repository.delete_item(item.id) == []
+    def delete(self, dto: ImportsDto) -> bool:
+        if dto.type == ShopUnitType.CATEGORY:
+            res = self.repository.delete_category(dto.id)
+        else:
+            res = self.repository.delete_item(dto.id)
+        return res
 
 
 class NodesService(AbstractService):
@@ -58,7 +46,6 @@ class NodesService(AbstractService):
                 d["children"].append(self.category_nodes(ImportsDtoFactory.dict_to_dto(ch)))
             else:
                 d["children"].append(self.item_nodes(ImportsDtoFactory.dict_to_dto(ch)))
-        self.presenter.make_category_price(d)
         return d
 
     @bool_on_error

@@ -32,7 +32,7 @@ class DeleteControlled(AbstractController):
     factory = ImportsDtoFactory
 
     def __init__(self, db: DBRepository):
-        service = self.service(self.factory, repository=db)
+        service = self.service(repository=db)
         super().__init__(service=service)
 
     def delete(self, id: str):
@@ -40,10 +40,7 @@ class DeleteControlled(AbstractController):
         if type(item) != dict:
             raise NotFoundException(f"item with id {id} not found")
         dto = self.factory.dict_to_dto(item)
-        if dto.type == ShopUnitType.CATEGORY:
-            res = self.service.delete_category(dto)
-        else:
-            res = self.service.delete_item(dto)
+        res = self.service.delete(dto)
         return ImportsPresenter.bool_to_response(res)
 
 
