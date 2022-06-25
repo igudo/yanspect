@@ -9,6 +9,7 @@ from typing import List, Tuple, Union
 class DBRepository(AbstractRepository, PostgresClient):
     offers_table_name: str
     categories_table_name: str
+    history_table_name: str
     schema = """
         id varchar(36) NOT NULL,
         parentId varchar(36),
@@ -16,6 +17,14 @@ class DBRepository(AbstractRepository, PostgresClient):
         date timestamp NOT NULL,
         price integer,
         PRIMARY KEY (id)
+    """
+    history_table_schema = """
+        id varchar(36) NOT NULL,
+        parentId varchar(36),
+        name varchar(450) NOT NULL,
+        type varchar(50) NOT NULL,
+        date timestamp NOT NULL,
+        price integer
     """
 
     def update_category(self, dto: ImportsDto, update_date=True) -> None:
@@ -26,7 +35,9 @@ class DBRepository(AbstractRepository, PostgresClient):
             if update_date:
                 self.update(self.categories_table_name, dto.parentId, date=dto.update_date)
             self.update_category_price(dto.parentId)
-            self.update_category(ImportsDtoFactory.dict_to_dto(self.get_item(dto.parentId)), update_date=update_date)
+            parentDto = ImportsDtoFactory.dict_to_dto(self.get_item(dto.parentId))
+            self.add_to_history(parentDto)
+            self.update_category(parentDto, update_date=update_date)
 
     def update_category_price(self, id: str) -> Tuple[int, int]:
         """Updates category price
@@ -76,6 +87,7 @@ class DBRepository(AbstractRepository, PostgresClient):
                 dto.update_date,
                 dto.price
             )
+        self.add_to_history(dto)
         self.update_category(dto)
 
     def get_item(self, id: str) -> Union[dict, None]:
@@ -104,12 +116,14 @@ class DBRepository(AbstractRepository, PostgresClient):
                 self.delete_category(child_item.id)
             else:
                 self.delete_item(child_item.id)
+        self.delete(self.history_table_name, id)
         return self.delete(self.categories_table_name, id) == []
 
     def delete_item(self, id: str) -> bool:
         """delete item with id"""
         dto = ImportsDtoFactory.dict_to_dto(self.get_item(id))
         r = self.delete(self.offers_table_name, id)
+        self.delete(self.history_table_name, id)
         self.update_category(dto, update_date=False)
         return r == []
 
@@ -117,6 +131,18 @@ class DBRepository(AbstractRepository, PostgresClient):
         """create tables via self.schema"""
         self.create_table_if_not_exists(self.offers_table_name, self.schema)
         self.create_table_if_not_exists(self.categories_table_name, self.schema)
+        self.create_table_if_not_exists(self.history_table_name, self.history_table_schema)
+
+    def add_to_history(self, dto: ImportsDto):
+        self.insert(
+            self.history_table_name,
+            dto.id,
+            dto.parentId,
+            dto.name,
+            str(dto.type),
+            dto.update_date,
+            dto.price
+        )
 
     def tuple_to_dict(self, t: tuple, tname: str) -> dict:
         """tuple of cols from table to dictionary"""

@@ -24,6 +24,7 @@ services:
       DATABASE_PASSWORD: root
       DB_OFFERS_TABLE_NAME: offers
       DB_CATEGORIES_TABLE_NAME: categories
+      DB_HISTORY_TABLE_NAME: history
     volumes:
       - ./app:/app
     depends_on:

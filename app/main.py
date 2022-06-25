@@ -27,12 +27,23 @@ async def startup():
     db_password = os.environ.get("DATABASE_PASSWORD")
     db_offers_table_name = os.environ.get("DB_OFFERS_TABLE_NAME")
     db_categories_table_name = os.environ.get("DB_CATEGORIES_TABLE_NAME")
+    db_history_table_name = os.environ.get("DB_HISTORY_TABLE_NAME")
     db = DBRepository(db_host, db_name, db_user, db_password, db_port)
+    db.history_table_name = db_history_table_name
     db.categories_table_name = db_categories_table_name
     db.offers_table_name = db_offers_table_name
     db.create_tables()
+
+    # DEBUG!!!!!!
+    db._execute("DELETE FROM "+db.offers_table_name)
+    db._execute("DELETE FROM "+db.categories_table_name)
+    db._execute("DELETE FROM "+db.history_table_name)
+
+@app.get("/test1")
+def test1():
     print(db.select(db.offers_table_name))
     print(db.select(db.categories_table_name))
+    print(db.select(db.history_table_name))
 
 
 @app.on_event("shutdown")
