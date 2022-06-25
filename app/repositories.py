@@ -3,6 +3,7 @@ from clients import PostgresClient
 from dto import ImportsDto
 from factories import ImportsDtoFactory
 from models import ShopUnitType
+from datetime import datetime
 from typing import List, Tuple, Union
 
 
@@ -133,6 +134,15 @@ class DBRepository(AbstractRepository, PostgresClient):
         self.create_table_if_not_exists(self.categories_table_name, self.schema)
         self.create_table_if_not_exists(self.history_table_name, self.history_table_schema)
 
+    def select_date_between(self, table_name, date1: datetime, date2: datetime, **kwargs):
+        q = "date BETWEEN "+self.e(date1)+" AND "+self.e(date2)
+        l = self.select(table_name, q=q, **kwargs)
+
+        for i in range(len(l)):
+            l[i] = self.history_tuple_to_dict(l[i])
+
+        return l
+
     def add_to_history(self, dto: ImportsDto):
         self.insert(
             self.history_table_name,
@@ -153,6 +163,16 @@ class DBRepository(AbstractRepository, PostgresClient):
             "update_date": t[3],
             "price": t[4],
             "type": ShopUnitType.CATEGORY if tname==self.categories_table_name else ShopUnitType.OFFER
+        }
+
+    def history_tuple_to_dict(self, t: tuple):
+        return {
+            "id": t[0],
+            "parentId": t[1],
+            "name": t[2],
+            "type": t[3],
+            "date": t[4],
+            "price": t[5],
         }
 
     def close(self):

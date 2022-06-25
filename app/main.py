@@ -4,7 +4,7 @@ from fastapi.responses import JSONResponse
 from fastapi.exception_handlers import RequestValidationError
 from models import ImportsRequest, Error, StatusCode
 from exceptions import NotFoundException
-from controllers import ImportsController, DeleteControlled, NodesControlled
+from controllers import ImportsController, DeleteController, NodesController, SalesController
 from repositories import DBRepository
 import logging
 
@@ -78,14 +78,22 @@ async def imports(request: ImportsRequest = Body(...)):
     """Импортирует новые товары и/или категории. Товары/категории импортированные повторно обновляют текущие.
     Изменение типа элемента с товара на категорию или с категории на товар не допускается. Порядок элементов в
     запросе является произвольным. """
-    return ImportsController(db).import_items(request)
+    r = ImportsController(db).import_items(request)
+    return JSONResponse(
+        status_code=StatusCode.OK_200 if r else StatusCode.BAD_REQUEST_400,
+        content={"message": r}
+    )
 
 
 @app.delete("/delete/{id}")
 async def delete(id: str):
     """Удалить элемент по идентификатору. При удалении категории удаляются все дочерние элементы. Доступ к статистике
     (истории обновлений) удаленного элемента невозможен. """
-    return DeleteControlled(db).delete(id)
+    r = DeleteController(db).delete(id)
+    return JSONResponse(
+        status_code=StatusCode.OK_200,
+        content={"message": r}
+    )
 
 
 @app.get("/nodes/{id}")
@@ -93,16 +101,31 @@ async def nodes(id: str):
     """Удалить элемент по идентификатору. При удалении категории удаляются все дочерние элементы. Доступ к статистике
     (истории обновлений) удаленного элемента невозможен. """
     return JSONResponse(
-        status_code=200,
-        content=NodesControlled(db).nodes(id)
+        status_code=StatusCode.OK_200,
+        content=NodesController(db).nodes(id)
     )
 
 
-# @app.get("/sales")
-# async def sales(date: str):
-#     """Получение списка **товаров**, цена которых была обновлена за последние 24 часа от времени переданном в
-#     запросе. Обновление цены не означает её изменение. Обновления цен удаленных товаров недоступны. При обновлении
-#     цены товара, средняя цена категории, которая содержит этот товар, тоже обновляется. """
-#     print(date)
-#     return 200
+@app.get("/node/{id}/statistic")
+async def statistic(id: str, dateStart: str, dateEnd: str):
+    """Получение списка **товаров**, цена которых была обновлена за последние 24 часа от времени переданном в
+    запросе. Обновление цены не означает её изменение. Обновления цен удаленных товаров недоступны. При обновлении
+    цены товара, средняя цена категории, которая содержит этот товар, тоже обновляется. """
+    r = NodesController(db).statistic(id, dateStart, dateEnd)
+    return JSONResponse(
+        status_code=StatusCode.OK_200 if type(r) == dict else StatusCode.BAD_REQUEST_400,
+        content={"message": r}
+    )
+
+
+@app.get("/sales")
+async def sales(date: str):
+    """Получение списка **товаров**, цена которых была обновлена за последние 24 часа от времени переданном в
+    запросе. Обновление цены не означает её изменение. Обновления цен удаленных товаров недоступны. При обновлении
+    цены товара, средняя цена категории, которая содержит этот товар, тоже обновляется. """
+    r = SalesController(db).sales(date)
+    return JSONResponse(
+        status_code=StatusCode.OK_200 if type(r)==dict else StatusCode.BAD_REQUEST_400,
+        content={"message": r}
+    )
 

@@ -1,10 +1,11 @@
 from abstract import AbstractController
-from services import ImportsService, DeleteService, NodesService
+from services import ImportsService, DeleteService, NodesService, SalesService
 from repositories import DBRepository
 from factories import ImportsDtoFactory
 from presenters import ImportsPresenter, NodesPresenter
 from fastapi.exceptions import RequestValidationError
 from exceptions import NotFoundException
+from datetime import datetime
 from models import ImportsRequest, Error, StatusCode, ShopUnitType
 
 
@@ -27,7 +28,7 @@ class ImportsController(AbstractController):
         return self.presenter.bool_to_response(is_imported)
 
 
-class DeleteControlled(AbstractController):
+class DeleteController(AbstractController):
     service = DeleteService
     factory = ImportsDtoFactory
 
@@ -44,7 +45,7 @@ class DeleteControlled(AbstractController):
         return ImportsPresenter.bool_to_response(res)
 
 
-class NodesControlled(AbstractController):
+class NodesController(AbstractController):
     service = NodesService
     factory = ImportsDtoFactory
     presenter = NodesPresenter
@@ -63,3 +64,36 @@ class NodesControlled(AbstractController):
         else:
             res = self.service.item_nodes(dto)
         return res
+
+    def statistic(self, id: str, dateStart: str, dateEnd: str):
+        try:
+            date1 = datetime.strptime(dateStart, "%Y-%m-%dT%H:%M:%S.%fZ")
+        except ValueError as e:
+            raise RequestValidationError(e)
+        try:
+            date2 = datetime.strptime(dateEnd, "%Y-%m-%dT%H:%M:%S.%fZ")
+        except ValueError as e:
+            raise RequestValidationError(e)
+
+        r = self.service.statistic(id, date1, date2)
+        if type(r) != list:
+            return 400
+        return {"items": r}
+
+
+class SalesController(AbstractController):
+    service = SalesService
+
+    def __init__(self, db: DBRepository):
+        service = self.service(repository=db)
+        super().__init__(service=service)
+
+    def sales(self, date: str):
+        try:
+            date = datetime.strptime(date, "%Y-%m-%dT%H:%M:%S.%fZ")
+        except ValueError as e:
+            raise RequestValidationError(e)
+        r = self.service.sales(date)
+        if type(r) != list:
+            return 400
+        return {"items": r}

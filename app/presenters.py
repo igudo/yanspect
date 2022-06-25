@@ -18,4 +18,3 @@ class NodesPresenter(AbstractPresenter):
         d["date"] = d["update_date"].isoformat(timespec='milliseconds')+"Z"
         del d["update_date"]
         return d
-

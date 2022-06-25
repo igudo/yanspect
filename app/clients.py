@@ -24,8 +24,7 @@ class PostgresClient(AbstractDBClient):
         cursor.close()
         return d
 
-    def select(self, table_name, **kwargs) -> list:
-        q = "1=1"
+    def select(self, table_name, q="1=1", **kwargs) -> list:
         for k,v in kwargs.items():
             q+=f" AND {k}={self.e(v)}"
         return self._execute(f"SELECT * FROM {table_name} WHERE {q};")

@@ -4,6 +4,7 @@ from dto import ImportsDto
 from repositories import DBRepository
 from models import ShopUnitType
 from decorators import bool_on_error
+from datetime import datetime, timedelta
 from presenters import NodesPresenter
 from typing import List
 
@@ -53,3 +54,24 @@ class NodesService(AbstractService):
         d = self.repository.get_item(dto.id)
         return self.presenter.to_item_nodes_dict(d)
 
+    @bool_on_error
+    def statistic(self, id: str, date1: datetime, date2: datetime):
+        kw = {"id": id}
+        l = self.repository.select_date_between(self.repository.history_table_name, date1, date2, **kw)
+        for i in range(len(l)):
+            l[i]["date"] = l[i]["date"].isoformat(timespec='milliseconds') + "Z"
+        return l
+
+
+class SalesService(AbstractService):
+    repository: DBRepository
+
+    @bool_on_error
+    def sales(self, date: datetime) -> List[dict]:
+        kw = {"type": ShopUnitType.OFFER.value}
+        l = self.repository.select_date_between(self.repository.history_table_name, date-timedelta(hours=24), date, **kw)
+        max_dates = {}
+        for el in l:
+            if el["date"] >= max_dates.get(el["id"], {"date":datetime.min})["date"]:
+                max_dates[el["id"]] = el
+        return list(max_dates.values())
