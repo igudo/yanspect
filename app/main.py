@@ -34,17 +34,6 @@ async def startup():
     db.offers_table_name = db_offers_table_name
     db.create_tables()
 
-    # DEBUG!!!!!!
-    db._execute("DELETE FROM "+db.offers_table_name)
-    db._execute("DELETE FROM "+db.categories_table_name)
-    db._execute("DELETE FROM "+db.history_table_name)
-
-@app.get("/test1")
-def test1():
-    print(db.select(db.offers_table_name))
-    print(db.select(db.categories_table_name))
-    print(db.select(db.history_table_name))
-
 
 @app.on_event("shutdown")
 def shutdown_event():

@@ -17,8 +17,6 @@ class ImportsService(AbstractService):
         new_ids = [item.id for item in dto]
         for item in dto:
             if (item.parentId is not None) and (item.parentId not in new_ids) and (self.repository.get_item(item.parentId) is None):
-                print(type(item.parentId))
-                print(new_ids)
                 return False
         for item in dto:
             self.repository.add_or_update(item)
