@@ -2,7 +2,7 @@ import fastapi
 from fastapi import FastAPI, Body
 from fastapi.responses import JSONResponse
 from fastapi.exception_handlers import RequestValidationError
-from models import ImportsRequest, Error, StatusCode
+from models import ImportsRequest, Error, StatusCode, ResponseContent
 from exceptions import NotFoundException
 from controllers import ImportsController, DeleteController, NodesController, SalesController
 from repositories import DBRepository
@@ -79,9 +79,10 @@ async def imports(request: ImportsRequest = Body(...)):
     Изменение типа элемента с товара на категорию или с категории на товар не допускается. Порядок элементов в
     запросе является произвольным. """
     r = ImportsController(db).import_items(request)
+    code = StatusCode.OK_200 if type(r) == bool and r else StatusCode.BAD_REQUEST_400
     return JSONResponse(
-        status_code=StatusCode.OK_200 if r else StatusCode.BAD_REQUEST_400,
-        content={"message": r}
+        status_code=code,
+        content=ResponseContent(code=code, message="success" if code==StatusCode.OK_200 else "wrong input").dict()
     )
 
 
@@ -90,9 +91,10 @@ async def delete(id: str):
     """Удалить элемент по идентификатору. При удалении категории удаляются все дочерние элементы. Доступ к статистике
     (истории обновлений) удаленного элемента невозможен. """
     r = DeleteController(db).delete(id)
+    code = StatusCode.OK_200 if type(r) == bool and r else StatusCode.BAD_REQUEST_400
     return JSONResponse(
-        status_code=StatusCode.OK_200,
-        content={"message": r}
+        status_code=code,
+        content=ResponseContent(code=code, message="success" if code==StatusCode.OK_200 else "wrong").dict()
     )
 
 
@@ -100,9 +102,11 @@ async def delete(id: str):
 async def nodes(id: str):
     """Удалить элемент по идентификатору. При удалении категории удаляются все дочерние элементы. Доступ к статистике
     (истории обновлений) удаленного элемента невозможен. """
+    r = NodesController(db).nodes(id)
+    code = StatusCode.OK_200 if type(r) == dict and r else StatusCode.BAD_REQUEST_400
     return JSONResponse(
-        status_code=StatusCode.OK_200,
-        content=NodesController(db).nodes(id)
+        status_code=code,
+        content=(r if code==StatusCode.OK_200 else ResponseContent(code=code, message="wrong").dict())
     )
 
 
@@ -112,9 +116,10 @@ async def statistic(id: str, dateStart: str, dateEnd: str):
     запросе. Обновление цены не означает её изменение. Обновления цен удаленных товаров недоступны. При обновлении
     цены товара, средняя цена категории, которая содержит этот товар, тоже обновляется. """
     r = NodesController(db).statistic(id, dateStart, dateEnd)
+    code = StatusCode.OK_200 if type(r) == dict and r else StatusCode.BAD_REQUEST_400
     return JSONResponse(
-        status_code=StatusCode.OK_200 if type(r) == dict else StatusCode.BAD_REQUEST_400,
-        content={"message": r}
+        status_code=code,
+        content=(r if code == StatusCode.OK_200 else ResponseContent(code=code, message="wrong").dict())
     )
 
 
@@ -124,8 +129,9 @@ async def sales(date: str):
     запросе. Обновление цены не означает её изменение. Обновления цен удаленных товаров недоступны. При обновлении
     цены товара, средняя цена категории, которая содержит этот товар, тоже обновляется. """
     r = SalesController(db).sales(date)
+    code = StatusCode.OK_200 if type(r) == dict and r else StatusCode.BAD_REQUEST_400
     return JSONResponse(
-        status_code=StatusCode.OK_200 if type(r)==dict else StatusCode.BAD_REQUEST_400,
-        content={"message": r}
+        status_code=code,
+        content=(r if code == StatusCode.OK_200 else ResponseContent(code=code, message="wrong").dict())
     )
 

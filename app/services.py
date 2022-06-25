@@ -14,6 +14,12 @@ class ImportsService(AbstractService):
 
     @bool_on_error
     def imports(self, dto: List[ImportsDto]) -> bool:
+        new_ids = [item.id for item in dto]
+        for item in dto:
+            if (item.parentId is not None) and (item.parentId not in new_ids) and (self.repository.get_item(item.parentId) is None):
+                print(type(item.parentId))
+                print(new_ids)
+                return False
         for item in dto:
             self.repository.add_or_update(item)
         return True
@@ -21,6 +27,7 @@ class ImportsService(AbstractService):
 
 class DeleteService(AbstractService):
     repository: DBRepository
+
     @bool_on_error
     def delete(self, dto: ImportsDto) -> bool:
         if dto.type == ShopUnitType.CATEGORY:
@@ -74,4 +81,8 @@ class SalesService(AbstractService):
         for el in l:
             if el["date"] >= max_dates.get(el["id"], {"date":datetime.min})["date"]:
                 max_dates[el["id"]] = el
-        return list(max_dates.values())
+        ans = []
+        for k in max_dates:
+            ans.append(max_dates[k])
+            max_dates[k]["date"] = max_dates[k]["date"].isoformat(timespec='milliseconds') + "Z"
+        return ans

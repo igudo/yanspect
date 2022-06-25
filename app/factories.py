@@ -14,10 +14,10 @@ class ImportsDtoFactory(AbstractFactory):
         for item in model.items:
             d.append(cls.dto_class(
                 name=item.name,
-                id=item.id,
+                id=str(item.id),
                 type=item.type,
                 price=item.price,
-                parentId=item.parentId,
+                parentId=str(item.parentId) if item.parentId else None,
                 update_date=datetime.strptime(model.updateDate, "%Y-%m-%dT%H:%M:%S.%fZ")
             ))
         return d

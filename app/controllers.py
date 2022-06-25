@@ -6,6 +6,8 @@ from presenters import ImportsPresenter, NodesPresenter
 from fastapi.exceptions import RequestValidationError
 from exceptions import NotFoundException
 from datetime import datetime
+from uuid import UUID
+from typing import Union
 from models import ImportsRequest, Error, StatusCode, ShopUnitType
 
 
@@ -18,14 +20,12 @@ class ImportsController(AbstractController):
         service = self.service(repository=db)
         super().__init__(service=service)
 
-    def import_items(self, model: ImportsRequest) -> str:
+    def import_items(self, model: ImportsRequest) -> bool:
         try:
             dto = self.factory.model_to_dto(model)
         except ValueError as e:
             raise RequestValidationError(e)
-
-        is_imported = self.service.imports(dto)
-        return self.presenter.bool_to_response(is_imported)
+        return self.service.imports(dto)
 
 
 class DeleteController(AbstractController):
@@ -36,13 +36,17 @@ class DeleteController(AbstractController):
         service = self.service(repository=db)
         super().__init__(service=service)
 
-    def delete(self, id: str):
+    def delete(self, id: str) -> bool:
+        try:
+            if str(UUID(id)) != id:
+                raise ValueError("wrong id format")
+        except ValueError as e:
+            raise RequestValidationError(e)
         item = self.service.repository.get_item(id)
         if type(item) != dict:
             raise NotFoundException(f"item with id {id} not found")
         dto = self.factory.dict_to_dto(item)
-        res = self.service.delete(dto)
-        return ImportsPresenter.bool_to_response(res)
+        return self.service.delete(dto)
 
 
 class NodesController(AbstractController):
@@ -54,7 +58,12 @@ class NodesController(AbstractController):
         service = self.service(self.presenter, repository=db)
         super().__init__(service=service)
 
-    def nodes(self, id: str) -> dict:
+    def nodes(self, id: str) -> Union[dict, bool]:
+        try:
+            if str(UUID(id)) != id:
+                raise ValueError("wrong id format")
+        except ValueError as e:
+            raise RequestValidationError(e)
         item = self.service.repository.get_item(id)
         if type(item) != dict:
             raise NotFoundException(f"item with id {id} not found")
@@ -65,7 +74,12 @@ class NodesController(AbstractController):
             res = self.service.item_nodes(dto)
         return res
 
-    def statistic(self, id: str, dateStart: str, dateEnd: str):
+    def statistic(self, id: str, dateStart: str, dateEnd: str) -> Union[bool, dict]:
+        try:
+            if str(UUID(id)) != id:
+                raise ValueError("wrong id format")
+        except ValueError as e:
+            raise RequestValidationError(e)
         try:
             date1 = datetime.strptime(dateStart, "%Y-%m-%dT%H:%M:%S.%fZ")
         except ValueError as e:
@@ -75,9 +89,13 @@ class NodesController(AbstractController):
         except ValueError as e:
             raise RequestValidationError(e)
 
+        item = self.service.repository.get_item(id)
+        if type(item) != dict:
+            raise NotFoundException(f"item with id {id} not found")
+
         r = self.service.statistic(id, date1, date2)
         if type(r) != list:
-            return 400
+            return False
         return {"items": r}
 
 
@@ -88,12 +106,12 @@ class SalesController(AbstractController):
         service = self.service(repository=db)
         super().__init__(service=service)
 
-    def sales(self, date: str):
+    def sales(self, date: str) -> Union[bool, dict]:
         try:
             date = datetime.strptime(date, "%Y-%m-%dT%H:%M:%S.%fZ")
         except ValueError as e:
             raise RequestValidationError(e)
         r = self.service.sales(date)
         if type(r) != list:
-            return 400
+            return False
         return {"items": r}

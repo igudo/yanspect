@@ -1,6 +1,7 @@
 from typing import List
 from pydantic import BaseModel
 from enum import Enum
+from uuid import UUID
 
 
 class ShopUnitType(str, Enum):
@@ -18,9 +19,9 @@ class StatusCode(int, Enum):
 
 class ShopUnitImport(BaseModel):
     """Модель товара/категории при запросе /import"""
-    id: str
+    id: UUID
     name: str
-    parentId: str = None
+    parentId: UUID = None
     type: ShopUnitType
     price: int = None
 
@@ -38,3 +39,9 @@ class Error(BaseModel):
     """Формат возвращаемых ошибок"""
     code: int
     message: str
+
+
+class ResponseContent(Error):
+    """Формат возвращаемых ответов"""
+    pass
+
