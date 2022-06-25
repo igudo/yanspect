@@ -27,7 +27,7 @@ class ImportsDtoFactory(AbstractFactory):
         return cls.dto_class(
             name=d["name"],
             id=d["id"],
-            type=d["type"],
+            type=d["type"].value if type(d["type"]) != str else d["type"],
             price=d["price"],
             parentId=d["parentId"],
             update_date=d["update_date"]
